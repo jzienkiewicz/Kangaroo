@@ -37,6 +37,12 @@ list(APPEND SRC_CU
     cu_raycast.cu cu_sdffusion.cu
 )
 
+file(
+    GLOB_RECURSE
+    EXTRA_FILES
+    extra/*
+)
+
 ################################################################################
 # Find required dependencies
 
@@ -100,7 +106,7 @@ CONFIGURE_FILE(
 include_directories( ${USER_INC} )
 include_directories( ${LIB_INC_DIR} )
 include_directories( ${INTERNAL_INC} )
-cuda_add_library( ${LIBRARY_NAME} ${SRC_H} ${SRC_CU} )
+cuda_add_library( ${LIBRARY_NAME} ${SRC_H} ${SRC_CU} ${EXTRA_FILES} )
 target_link_libraries(${LIBRARY_NAME} ${LINK_LIBS})
 
 #######################################################
