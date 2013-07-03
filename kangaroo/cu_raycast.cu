@@ -105,8 +105,11 @@ __global__ void KernRaycastSdf(Image<float> imgdepth, Image<float4> norm, Image<
 void RaycastSdf(Image<float> depth, Image<float4> norm, Image<float> img, const BoundedVolume<SDF_t> vol, const Mat<float,3,4> T_wc, ImageIntrinsics K, float near, float far, float trunc_dist, bool subpix )
 {
     dim3 blockDim, gridDim;
-//    InitDimFromOutputImageOver(blockDim, gridDim, img, 16, 16);
+#if __CUDA_ARCH__ < 300
+    InitDimFromOutputImageOver(blockDim, gridDim, img, 16, 16);
+#else
     InitDimFromOutputImageOver(blockDim, gridDim, img);
+#endif
     KernRaycastSdf<<<gridDim,blockDim>>>(depth, norm, img, vol, T_wc, K, near, far, trunc_dist, subpix);
     GpuCheckErrors();
 }
@@ -188,8 +191,11 @@ __global__ void KernRaycastSdf(Image<float> imgdepth, Image<float4> norm, Image<
 void RaycastSdf(Image<float> depth, Image<float4> norm, Image<float> img, const BoundedVolume<SDF_t> vol, const BoundedVolume<float> colorVol, const Mat<float,3,4> T_wc, ImageIntrinsics K, float near, float far, float trunc_dist, bool subpix )
 {
     dim3 blockDim, gridDim;
-//    InitDimFromOutputImageOver(blockDim, gridDim, img, 16, 16);
+#if __CUDA_ARCH__ < 300
+    InitDimFromOutputImageOver(blockDim, gridDim, img, 16, 16);
+#else
     InitDimFromOutputImageOver(blockDim, gridDim, img);
+#endif
     KernRaycastSdf<<<gridDim,blockDim>>>(depth, norm, img, vol, colorVol, T_wc, K, near, far, trunc_dist, subpix);
     GpuCheckErrors();
 }
