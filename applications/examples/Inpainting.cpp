@@ -13,7 +13,7 @@ using namespace pangolin;
 int main( int argc, char* argv[] )
 {
     // Open video device
-    const std::string vid_uri = argc >= 2 ? argv[1] : "";    
+    const std::string vid_uri = argc >= 2 ? argv[1] : "dc1394:[fmt=FORMAT7_1,size=640x480,pos=2+2,iso=400,dma=10]//0";
     pangolin::VideoInput video(vid_uri);
     if(video.PixFormat().format != "GRAY8")
         throw pangolin::VideoException("Wrong format. Gray8 required.");
