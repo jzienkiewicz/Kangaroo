@@ -18,7 +18,9 @@ find_package(Sophus QUIET)
 # git clone http://robotics.gwu.edu/git/SceneGraph.git
 find_package(SceneGraph 0.1 QUIET)
 
-if(Pangolin_FOUND AND Sophus_FOUND AND SceneGraph_FOUND )
+find_package(CVARS QUIET)
+
+if(Pangolin_FOUND AND Sophus_FOUND AND SceneGraph_FOUND AND CVARS_FOUND)
     include_directories(${Pangolin_INCLUDE_DIRS})
     link_libraries(${Pangolin_LIBRARIES})
     
