@@ -657,12 +657,24 @@ struct Image {
         return GetBilinear<TR>(p.x, p.y);
     }
 
+    template<typename TR>
+    inline __device__ __host__
+    Mat<TR,1,2> GetCentralDiff(const float2 p) const
+    {
+        return GetCentralDiff<TR>(p.x, p.y);
+    }
+
     inline  __device__ __host__
     bool InBounds(const float2 p, float border) const
     {
         return InBounds(p.x, p.y, border);
     }
 
+    inline  __device__ __host__
+    bool InBounds(const float2 p) const
+    {
+        return InBounds(p.x, p.y);
+    }
 
     //////////////////////////////////////////////////////
     // NVidia Performance Primitives convenience methods
