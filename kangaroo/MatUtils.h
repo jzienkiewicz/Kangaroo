@@ -48,10 +48,26 @@ Mat<float,3> make_mat(float x, float y, float z)
 }
 
 __host__ __device__ inline
+Mat<float,3> make_mat(float3 v)
+{
+    Mat<float,3> m;
+    m(0) = v.x; m(1) = v.y; m(2) = v.z;
+    return m;
+}
+
+__host__ __device__ inline
 Mat<float,4> make_mat(float x, float y, float z, float w)
 {
     Mat<float,4> m;
     m(0) = x; m(1) = y; m(2) = z; m(3) = w;
+    return m;
+}
+
+__host__ __device__ inline
+Mat<float,4> make_mat(float4 v)
+{
+    Mat<float,4> m;
+    m(0) = v.x; m(1) = v.y; m(2) = v.z; m(3) = v.w;
     return m;
 }
 
@@ -298,6 +314,12 @@ float dot(const float3& lhs, const float4& rhs)
 
 __host__ __device__ inline
 float dot(const float4& lhs, const float3& rhs)
+{
+    return lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
+}
+
+__host__ __device__ inline
+float dot(const float4& lhs, const float4& rhs)
 {
     return lhs.x*rhs.x + lhs.y*rhs.y + lhs.z*rhs.z;
 }
