@@ -1,3 +1,8 @@
+if(APPLE)
+    set(CMAKE_C_COMPILER "gcc-mp-4.6")
+    set(CMAKE_CXX_COMPILER "g++-mp-4.6")
+endif()
+
 cmake_minimum_required( VERSION 2.8 )
 project( Kangaroo )
 
