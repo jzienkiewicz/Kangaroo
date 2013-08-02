@@ -25,6 +25,7 @@ public:
 
     float Elapsed_ms();
     float Average_ms();
+    float Average_fps();
     float Min_ms();
     float Max_ms();
 
@@ -124,6 +125,12 @@ inline float CudaTimer::Average_ms()
 {
     SyncTime();
     return timeAvg;
+}
+
+inline float CudaTimer::Average_fps()
+{
+    SyncTime();
+    return 1000/timeAvg;
 }
 
 inline float CudaTimer::Min_ms()
