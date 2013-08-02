@@ -1,2 +1,2 @@
-ADD_SUBDIRECTORY(examples)
-ADD_SUBDIRECTORY(kinectfusion)
+add_subdirectory(examples)
+add_subdirectory(kinectfusion)
