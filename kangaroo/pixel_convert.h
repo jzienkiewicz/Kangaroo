@@ -12,6 +12,7 @@ To ConvertPixel(Ti p)
     return p;
 }
 
+// template specialisations
 template<>
 __host__ __device__ inline
 uchar4 ConvertPixel(unsigned char p)
@@ -24,6 +25,20 @@ __host__ __device__ inline
 uchar3 ConvertPixel(unsigned char p)
 {
     return make_uchar3(p,p,p);
+}
+
+template<>
+__host__ __device__ inline
+uchar4 ConvertPixel(float p)
+{
+    return make_uchar4(p*255,p*255,p*255,255);
+}
+
+template<>
+__host__ __device__ inline
+uchar3 ConvertPixel(float p)
+{
+    return make_uchar3(p*255,p*255,p*255);
 }
 
 template<>
@@ -108,6 +123,14 @@ float3 ConvertPixel(float p)
 template<>
 __host__ __device__ inline
 float ConvertPixel(float3 p)
+{
+    return (p.x + p.y + p.z) / 3.0f;
+}
+
+
+template<>
+__host__ __device__ inline
+float ConvertPixel(float4 p)
 {
     return (p.x + p.y + p.z) / 3.0f;
 }
