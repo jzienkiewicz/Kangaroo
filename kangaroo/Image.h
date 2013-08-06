@@ -306,14 +306,20 @@ struct Image {
     inline __host__
     void Memset(unsigned char v = 0)
     {
-        cudaMemset(ptr,v,pitch*h);
+        const cudaError err = cudaMemset(ptr,v,pitch*h);
+        if( err != cudaSuccess ) {
+            throw CudaException("Unable to cudaMemset in Memset", err);
+        }
     }
 
     template<typename TargetFrom, typename ManagementFrom>
     inline __host__
     void CopyFrom(const Image<T,TargetFrom,ManagementFrom>& img)
     {
-        cudaMemcpy2D(ptr,pitch,img.ptr,img.pitch, std::min(img.w,w)*sizeof(T), std::min(img.h,h), TargetCopyKind<Target,TargetFrom>() );
+        const cudaError err = cudaMemcpy2D(ptr,pitch,img.ptr,img.pitch, std::min(img.w,w)*sizeof(T), std::min(img.h,h), TargetCopyKind<Target,TargetFrom>() );
+        if( err != cudaSuccess ) {
+            throw CudaException("Unable to cudaMemcpy2D in CopyFrom", err);
+        }
     }
 
     template <typename DT>
