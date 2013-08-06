@@ -29,4 +29,9 @@ void ElementwiseMultiplyAdd(Image<Tout> d, const Image<Tin1> a, const Image<Tin2
 template<typename Tout, typename T>
 Tout ImageL1(Image<T> img, Image<unsigned char> scratch);
 
+template<typename T>
+T ImageMax(Image<T> img);
+
+template<typename T>
+T ImageMin(Image<T> img);
 }

@@ -247,6 +247,26 @@ Tout ImageL1(Image<T> img, Image<unsigned char> scratch)
     return thrust::reduce(sum.begin(), sum.end(), 0.0f, thrust::plus<Tout>() );
 }
 
+template<typename T>
+T ImageMax(Image<T> img)
+{
+    thrust::device_ptr<T> begin(img.ptr);
+    thrust::device_ptr<T> end(img.ptr + img.w*img.h);
+
+    return thrust::reduce(begin, end, (T) -1, thrust::maximum<T>());
+}
+
+template<typename T>
+T ImageMin(Image<T> img)
+{
+    thrust::device_ptr<T> begin(img.ptr);
+    thrust::device_ptr<T> end(img.ptr + img.w*img.h);
+
+    T img_max = ImageMax(img);
+
+    return thrust::reduce(begin, end, (T) img_max, thrust::minimum<T>());
+}
+
 //////////////////////////////////////////////////////
 // Instantiate Templates
 //////////////////////////////////////////////////////
@@ -268,5 +288,8 @@ template void ElementwiseMultiplyAdd(Image<float> d, const Image<float> a, const
 template void ElementwiseDivision(Image<float> c, const Image<float> a, const Image<float> b, float sa, float sb, float scalar, float offset);
 
 template float ImageL1(Image<float2> img, Image<unsigned char> scratch);
+
+template float ImageMax(Image<float> img);
+template float ImageMin(Image<float> img);
 
 }
