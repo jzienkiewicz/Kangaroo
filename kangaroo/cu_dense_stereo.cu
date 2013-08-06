@@ -11,7 +11,7 @@ namespace roo
 {
 
 const int MinDisparity = 0;
-const int DefaultRad = 2;
+const int DefaultRad   = 1;
 //typedef SSNDPatchScore<float,DefaultRad,ImgAccessRaw> DefaultSafeScoreType;
 typedef SANDPatchScore<float,DefaultRad,ImgAccessRaw> DefaultSafeScoreType;
 //typedef SinglePixelSqPatchScore<float,ImgAccessRaw> DefaultSafeScoreType;
@@ -683,44 +683,146 @@ void CostVolumeFromStereo(Volume<CostVolElem> dvol, Image<unsigned char> dimgl, 
 //////////////////////////////////////////////////////
 
 template<typename TI, typename Score>
-__global__ void KernAddToCostVolume(
-    Volume<CostVolElem> dvol, const Image<TI> dimgv,
-    const Image<TI> dimgc, Mat<float,3,4> KT_cv,
-    float fu, float fv, float u0, float v0,
-    float baseline
-){
-    const int u = blockIdx.x*blockDim.x + threadIdx.x;
-    const int v = blockIdx.y*blockDim.y + threadIdx.y;
-    const int d = blockIdx.z*blockDim.z + threadIdx.z;
+__global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
+                                    const Image<TI> dimgv,
+                                    const Image<TI> dimgc,
+                                    Mat<float, 3, 4> KT_cv,
+                                    float fu, float fv, float u0, float v0,
+                                    float baseline)
+{
+    const int u = blockIdx.x * blockDim.x + threadIdx.x;
+    const int v = blockIdx.y * blockDim.y + threadIdx.y;
+    const int d = blockIdx.z * blockDim.z + threadIdx.z;
 
     float3 Pv;
     Pv.z = fu * baseline / d;
-    Pv.x = Pv.z * (u-u0) / fu;
-    Pv.y = Pv.z * (v-v0) / fv;
+    Pv.x = Pv.z * (u - u0) / fu;
+    Pv.y = Pv.z * (v - v0) / fv;
 
     const float3 KPc = KT_cv * Pv;
     const float2 pc = dn(KPc);
 
-    if( KPc.z > 0 && dimgc.InBounds(pc.x, pc.y,5) ) {
-//        vol(u,v,d) = 1.0f;
-        const float score =  Score::Score(dimgv, u,v, dimgc, pc.x, pc.y) / (float)(Score::area);
-//        const float score = (dimgv(u,v) - dimgc.template GetBilinear<float>(pc)) / 255.0f;
-        CostVolElem elem = dvol(u,v,d);
+    if (KPc.z > 0 && dimgc.InBounds(pc.x, pc.y, 5))
+    {
+        const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
+        // const float score = (dimgv(u,v) - dimgc.template GetBilinear<float>(pc)) / 255.0f;
+        CostVolElem elem = dvol(u, v, d);
         elem.sum += score;
-        elem.n += 1;
-        dvol(u,v,d) = elem;
+        elem.n   += 1;
+        dvol(u, v, d) = elem;
     }
 }
 
-void CostVolumeAdd(Volume<CostVolElem> dvol, const Image<unsigned char> dimgv,
-    const Image<unsigned char> dimgc, Mat<float,3,4> KT_cv,
-    float fu, float fv, float u0, float v0,
-    float baseline, int levels
-) {
-    dim3 blockDim(8,8,8);
+__host__ __device__
+inline float d2Depth(int d, int dsize, float minDepth, float maxDepth)
+{
+    float step = (maxDepth - minDepth) / (dsize - 1);
+
+    return step * d + minDepth;
+}
+
+__host__ __device__
+inline float d2DepthInv(int d, int dsize, float minDepth, float maxDepth)
+{
+    float invDepthMin = 1 / maxDepth;
+    float invDepthMax = 1 / minDepth;
+    float step = (invDepthMax - invDepthMin) / (dsize - 1);
+
+    return 1 / (step * d + invDepthMin);
+}
+
+__global__ void KernIdx2Depth(Image<float> dOut, const Image<float> dIn, int dsize, float minDepth, float maxDepth, bool invDepth)
+{
+    const int x = blockIdx.x * blockDim.x + threadIdx.x;
+    const int y = blockIdx.y * blockDim.y + threadIdx.y;
+
+    if (dOut.InBounds(x, y))
+    {
+        if (invDepth)
+        {
+            dOut(x, y) = d2DepthInv(dIn(x, y), dsize, minDepth, maxDepth);
+        }
+        else
+        {
+            dOut(x, y) = d2Depth(dIn(x, y), dsize, minDepth, maxDepth);
+        }
+    }
+}
+
+void Idx2Depth(Image<float> dOut, const Image<float> dIn, int dsize, float minDepth, float maxDepth, bool invDepth)
+{
+    dim3 blockDim, gridDim;
+    InitDimFromOutputImageOver(blockDim, gridDim, dOut);
+    KernIdx2Depth<<<gridDim, blockDim>>>(dOut, dIn, dsize, minDepth, maxDepth, invDepth);
+}
+
+template<typename TI, typename Score>
+__global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
+                                    const Image<TI> dimgv,
+                                    const Image<TI> dimgc,
+                                    Mat<float, 3, 4> KT_cv,
+                                    ImageIntrinsics K,
+                                    float minDepth,
+                                    float maxDepth,
+                                    bool invDepth)
+{
+    const int u = blockIdx.x * blockDim.x + threadIdx.x;
+    const int v = blockIdx.y * blockDim.y + threadIdx.y;
+    const int d = blockIdx.z * blockDim.z + threadIdx.z;
+
+    float3 Pv;
+    if (invDepth)
+    {
+        Pv.z = d2DepthInv(d, dvol.d, minDepth, maxDepth);
+    }
+    else
+    {
+        Pv.z = d2Depth(d, dvol.d, minDepth, maxDepth);
+    }
+
+    Pv = K.Unproject(u, v, Pv.z);
+
+    const float3 KPc = KT_cv * Pv;
+    const float2 pc  = dn(KPc);
+
+    if (KPc.z > 0 && dimgc.InBounds(pc.x, pc.y, 5))
+    {
+        const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
+        // const float score = (dimgv(u,v) - dimgc.template GetBilinear<float>(pc)) / 255.0f;
+        CostVolElem elem = dvol(u, v, d);
+        elem.sum += score;
+        elem.n   += 1;
+        dvol(u, v, d) = elem;
+    }
+}
+
+void CostVolumeAdd(Volume<CostVolElem> dvol,
+                   const Image<unsigned char> dimgv,
+                   const Image<unsigned char> dimgc,
+                   Mat<float, 3, 4> KT_cv,
+                   float fu, float fv, float u0, float v0,
+                   float baseline,
+                   int levels)
+{
+    dim3 blockDim(8, 8, 8);
     dim3 gridDim(dvol.w / blockDim.x, dvol.h / blockDim.y, dvol.d / blockDim.z);
     KernAddToCostVolume<unsigned char, SANDPatchScore<float,DefaultRad,ImgAccessBilinearClamped<float> > ><<<gridDim,blockDim>>>(dvol,dimgv,dimgc, KT_cv, fu,fv,u0,v0, baseline);
 }
+
+void CostVolumeAdd(Volume<CostVolElem> dvol,
+                   const Image<unsigned char> dimgv,
+                   const Image<unsigned char> dimgc,
+                   Mat<float, 3, 4> KT_cv,
+                   const ImageIntrinsics K,
+                   float minDepth,
+                   float maxDepth,
+                   bool invDepth)
+{
+    dim3 blockDim(8, 8, 8);
+    dim3 gridDim(dvol.w / blockDim.x, dvol.h / blockDim.y, dvol.d / blockDim.z);
+    KernAddToCostVolume<unsigned char, SANDPatchScore<float, DefaultRad, ImgAccessBilinearClamped<float> > ><<<gridDim, blockDim>>>(dvol, dimgv, dimgc, KT_cv, K, minDepth, maxDepth, invDepth);
+}
+
 
 //////////////////////////////////////////////////////
 
