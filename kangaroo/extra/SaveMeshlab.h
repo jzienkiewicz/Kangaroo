@@ -1,12 +1,12 @@
 #pragma once
 
-#include <boost/ptr_container/ptr_vector.hpp>
-
 #include <sophus/se3.hpp>
 #include <kangaroo/Sdf.h>
 
 #include "SaveGIL.h"
 #include "../MarchingCubes.h"
+
+#include <boost/ptr_container/ptr_vector.hpp>
 
 struct KinectKeyframe
 {
