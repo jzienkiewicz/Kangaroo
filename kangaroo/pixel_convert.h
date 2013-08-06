@@ -29,6 +29,22 @@ uchar3 ConvertPixel(unsigned char p)
 
 template<>
 __host__ __device__ inline
+float ConvertPixel(unsigned char p)
+{
+    return p/255.0f;
+}
+
+
+template<>
+__host__ __device__ inline
+unsigned char ConvertPixel(float p)
+{
+    return p*255;
+}
+
+
+template<>
+__host__ __device__ inline
 uchar4 ConvertPixel(float p)
 {
     return make_uchar4(p*255,p*255,p*255,255);
