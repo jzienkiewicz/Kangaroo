@@ -184,8 +184,8 @@ __global__ void KernExponentialEdgeWeight(Image<float> imgw, const Image<float> 
         float2 grad = make_float2(0,0);
         if(0<x && x<imgi.w-1) grad.x = imgi.GetCentralDiffDx<float>(x,y);
         if(0<y && y<imgi.h-1) grad.y = imgi.GetCentralDiffDy<float>(x,y);
-//        if(0<x && x<imgi.w) grad.x = imgi.GetBackwardDiffDx<float>(x,y);
-//        if(0<y && y<imgi.h) grad.y = imgi.GetBackwardDiffDy<float>(x,y);
+        //        if(0<x && x<imgi.w) grad.x = imgi.GetBackwardDiffDx<float>(x,y);
+        //        if(0<y && y<imgi.h) grad.y = imgi.GetBackwardDiffDy<float>(x,y);
 
         const float w = expf( -alpha * powf(sqrt(grad.x*grad.x + grad.y*grad.y),beta) );
         imgw(x,y) = w;
@@ -206,15 +206,15 @@ void ExponentialEdgeWeight(Image<float> imgw, const Image<float> imgi, float alp
 
 template<typename TD, typename TI, typename Score>
 __global__ void KernDenseStereo(
-    Image<TD> dDisp, Image<TI> dCamLeft, Image<TI> dCamRight, TD maxDispVal, TD dispStep, float acceptThresh
-) {
+        Image<TD> dDisp, Image<TI> dCamLeft, Image<TI> dCamRight, TD maxDispVal, TD dispStep, float acceptThresh
+        ) {
     const int x = blockIdx.x*blockDim.x + threadIdx.x;
     const int y = blockIdx.y*blockDim.y + threadIdx.y;
 
     TD bestDisp = InvalidValue<TD>::Value();
 
     if( Score::width  <= x && x < (dCamLeft.w - Score::width) &&
-        Score::height <= y && y < (dCamLeft.h - Score::height) )
+            Score::height <= y && y < (dCamLeft.h - Score::height) )
     {
         // Search for best matching pixel
         float bestScore = 1E+36;
@@ -372,12 +372,12 @@ const int MAXBW = 512;
 
 template<typename TDisp, typename TImg>
 void DenseStereo(
-    Image<TDisp> dDisp, const Image<TImg> dCamLeft, const Image<TImg> dCamRight,
-    TDisp maxDisp, float acceptThresh, int score_rad
-) {
+        Image<TDisp> dDisp, const Image<TImg> dCamLeft, const Image<TImg> dCamRight,
+        TDisp maxDisp, float acceptThresh, int score_rad
+        ) {
     dim3 blockDim(dDisp.w, 1);
     dim3 gridDim(1, dDisp.h);
-//    InitDimFromOutputImageOver(blockDim,gridDim,dDisp);
+    //    InitDimFromOutputImageOver(blockDim,gridDim,dDisp);
 
     const TDisp dispStep = 1;
     if( score_rad == 0 ) {
@@ -403,44 +403,44 @@ template void DenseStereo<unsigned char, unsigned char>(Image<unsigned char>, co
 template void DenseStereo<char, unsigned char>(Image<char>, const Image<unsigned char>, const Image<unsigned char>, char, float, int);
 
 void DenseStereoSubpix(
-    Image<float> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight, float maxDisp, float dispStep, float acceptThresh, int score_rad, bool score_normed
-) {
+        Image<float> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight, float maxDisp, float dispStep, float acceptThresh, int score_rad, bool score_normed
+        ) {
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, dDisp);
 
-//    if(score_normed) {
-//        if( score_rad == 0 ) {
-//            KernDenseStereo<float, unsigned char, SinglePixelSqPatchScore<float,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 1 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,1,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if( score_rad == 2 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,2,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 3 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,3,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if( score_rad == 4 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,4,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 5 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,5,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 6 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,6,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 7 ) {
-//            KernDenseStereo<float, unsigned char, SANDPatchScore<float,7,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }
-//    }else{
-//        if( score_rad == 0 ) {
-//            KernDenseStereo<float, unsigned char, SinglePixelSqPatchScore<float,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 1 ) {
-//            KernDenseStereo<float, unsigned char, SADPatchScore<float,1,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if( score_rad == 2 ) {
-//            KernDenseStereo<float, unsigned char, SADPatchScore<float,2,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 3 ) {
-//            KernDenseStereo<float, unsigned char, SADPatchScore<float,3,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if( score_rad == 4 ) {
-//            KernDenseStereo<float, unsigned char, SADPatchScore<float,4,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }else if(score_rad == 5 ) {
-//            KernDenseStereo<float, unsigned char, SADPatchScore<float,5,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
-//        }
-//    }
+    //    if(score_normed) {
+    //        if( score_rad == 0 ) {
+    //            KernDenseStereo<float, unsigned char, SinglePixelSqPatchScore<float,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 1 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,1,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if( score_rad == 2 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,2,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 3 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,3,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if( score_rad == 4 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,4,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 5 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,5,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 6 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,6,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 7 ) {
+    //            KernDenseStereo<float, unsigned char, SANDPatchScore<float,7,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }
+    //    }else{
+    //        if( score_rad == 0 ) {
+    //            KernDenseStereo<float, unsigned char, SinglePixelSqPatchScore<float,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 1 ) {
+    //            KernDenseStereo<float, unsigned char, SADPatchScore<float,1,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if( score_rad == 2 ) {
+    //            KernDenseStereo<float, unsigned char, SADPatchScore<float,2,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 3 ) {
+    //            KernDenseStereo<float, unsigned char, SADPatchScore<float,3,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if( score_rad == 4 ) {
+    //            KernDenseStereo<float, unsigned char, SADPatchScore<float,4,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }else if(score_rad == 5 ) {
+    //            KernDenseStereo<float, unsigned char, SADPatchScore<float,5,ImgAccessBilinear<float> > ><<<gridDim,blockDim>>>(dDisp, dCamLeft, dCamRight, maxDisp, dispStep, acceptThresh);
+    //        }
+    //    }
 }
 
 //////////////////////////////////////////////////////
@@ -450,8 +450,8 @@ const int RAD = 3;
 const int W = 2*RAD+1;
 
 __global__ void KernDenseStereoTest(
-    Image<float> dDisp, Image<unsigned char> dCamLeft, Image<unsigned char> dCamRight, int maxDisp
-) {
+        Image<float> dDisp, Image<unsigned char> dCamLeft, Image<unsigned char> dCamRight, int maxDisp
+        ) {
     const int x = threadIdx.x;
     const int y = blockIdx.y;
 
@@ -477,8 +477,8 @@ __global__ void KernDenseStereoTest(
 #pragma unroll
         for(int r=0; r<W; ++r) {
             score += abs(cache_l[r][x] - cache_r[r][xd]);
-//            const int yr = y-RAD+r;
-//            score += abs(dCamLeft(x,yr) - dCamRight(xd,yr));
+            //            const int yr = y-RAD+r;
+            //            score += abs(dCamLeft(x,yr) - dCamRight(xd,yr));
         }
 
         if(score < bestScore) {
@@ -491,8 +491,8 @@ __global__ void KernDenseStereoTest(
 }
 
 void DenseStereoTest(
-    Image<float> dDisp, Image<unsigned char> dCamLeft, Image<unsigned char> dCamRight, int maxDisp
-) {
+        Image<float> dDisp, Image<unsigned char> dCamLeft, Image<unsigned char> dCamRight, int maxDisp
+        ) {
     const int w = dDisp.w;
     const int h = dDisp.h - 2*RAD;
     const int x = 0;
@@ -509,8 +509,8 @@ void DenseStereoTest(
 
 template<typename TD>
 __global__ void KernLeftRightCheck(
-    Image<TD> dispL, Image<TD> dispR, float sd, float maxDiff
-) {
+        Image<TD> dispL, Image<TD> dispR, float sd, float maxDiff
+        ) {
     const int x = blockIdx.x*blockDim.x + threadIdx.x;
     const int y = blockIdx.y*blockDim.y + threadIdx.y;
 
@@ -549,8 +549,8 @@ void LeftRightCheck(Image<float> dispL, Image<float> dispR, float sd, float maxD
 
 template<typename TD, typename TI, typename Score>
 __global__ void KernDisparityImageCrossSection(
-    Image<TD> dScore, Image<unsigned char> dDisp, Image<TI> dCamLeft, Image<TI> dCamRight, int y
-) {
+        Image<TD> dScore, Image<unsigned char> dDisp, Image<TI> dCamLeft, Image<TI> dCamRight, int y
+        ) {
     const int x = blockIdx.x*blockDim.x + threadIdx.x;
     const int c = blockIdx.y*blockDim.y + threadIdx.y;
 
@@ -564,8 +564,8 @@ __global__ void KernDisparityImageCrossSection(
 }
 
 void DisparityImageCrossSection(
-    Image<float4> dScore, Image<unsigned char> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight, int y
-) {
+        Image<float4> dScore, Image<unsigned char> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight, int y
+        ) {
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, dScore);
     KernDisparityImageCrossSection<float4, unsigned char, DefaultSafeScoreType><<<gridDim,blockDim>>>(dScore, dDisp, dCamLeft, dCamRight, y);
@@ -577,8 +577,8 @@ void DisparityImageCrossSection(
 
 template<typename TDo, typename TDi, typename TI, typename Score>
 __global__ void KernDenseStereoSubpixelRefine(
-    Image<TDo> dDispOut, const Image<TDi> dDisp, const Image<TI> dCamLeft, const Image<TI> dCamRight
-) {
+        Image<TDo> dDispOut, const Image<TDi> dDisp, const Image<TI> dCamLeft, const Image<TI> dCamRight
+        ) {
     const int x = blockIdx.x*blockDim.x + threadIdx.x;
     const int y = blockIdx.y*blockDim.y + threadIdx.y;
 
@@ -602,7 +602,7 @@ __global__ void KernDenseStereoSubpixelRefine(
     const float denom = (d1 - d2)*(d1 - d3)*(d2 - d3);
     const float A = (d3 * (s2 - s1) + d2 * (s1 - s3) + d1 * (s3 - s2)) / denom;
     const float B = (d3*d3 * (s1 - s2) + d2*d2 * (s3 - s1) + d1*d1 * (s2 - s3)) / denom;
-//    const float C = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
+    //    const float C = (x2 * x3 * (x2 - x3) * y1 + x3 * x1 * (x3 - x1) * y2 + x1 * x2 * (x1 - x2) * y3) / denom;
 
     // Minima of parabola
     const float newDisp = -B / (2*A);
@@ -611,14 +611,14 @@ __global__ void KernDenseStereoSubpixelRefine(
     if( d3 < newDisp && newDisp < d1 ) {
         dDispOut(x,y) = newDisp;
     }else{
-//        dDisp(x,y) = bestDisp / maxDisp;
+        //        dDisp(x,y) = bestDisp / maxDisp;
         dDispOut(x,y) = InvalidValue<TDo>::Value();
     }
 }
 
 void DenseStereoSubpixelRefine(
-    Image<float> dDispOut, const Image<unsigned char> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight
-) {
+        Image<float> dDispOut, const Image<unsigned char> dDisp, const Image<unsigned char> dCamLeft, const Image<unsigned char> dCamRight
+        ) {
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, dDisp);
     KernDenseStereoSubpixelRefine<float,unsigned char,unsigned char, DefaultSafeScoreType><<<gridDim,blockDim>>>(dDispOut, dDisp, dCamLeft, dCamRight);
@@ -629,8 +629,8 @@ void DenseStereoSubpixelRefine(
 //////////////////////////////////////////////////////
 
 __global__ void KernDisparityImageToVbo(
-    Image<float4> dVbo, const Image<float> dDisp, float baseline, float fu, float fv, float u0, float v0
-) {
+        Image<float4> dVbo, const Image<float> dDisp, float baseline, float fu, float fv, float u0, float v0
+        ) {
     const int u = blockIdx.x*blockDim.x + threadIdx.x;
     const int v = blockIdx.y*blockDim.y + threadIdx.y;
     dVbo(u,v) = DepthFromDisparity(u,v, dDisp(u,v), baseline, fu, fv, u0, v0, MinDisparity);
@@ -659,8 +659,8 @@ void CostVolumeZero(Volume<CostVolElem> costvol )
 
 template<typename TD, typename TI, typename Score>
 __global__ void KernCostVolumeFromStereo(
-    Volume<CostVolElem> dvol, Image<TI> dimgl, Image<TI> dimgr
-) {
+        Volume<CostVolElem> dvol, Image<TI> dimgl, Image<TI> dimgr
+        ) {
     const int u = blockIdx.x*blockDim.x + threadIdx.x;
     const int v = blockIdx.y*blockDim.y + threadIdx.y;
     const int d = blockIdx.z*blockDim.z + threadIdx.z;
@@ -714,21 +714,21 @@ __global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
 }
 
 __host__ __device__
-inline float d2Depth(int d, int dsize, float minDepth, float maxDepth)
+inline float d2Depth(int d, int dsize, float minDepth, float maxDepth, bool invDepth)
 {
-    float step = (maxDepth - minDepth) / (dsize - 1);
+    if (invDepth)
+    {
+        float invDepthMin = 1 / maxDepth;
+        float invDepthMax = 1 / minDepth;
+        float step = (invDepthMax - invDepthMin) / (dsize - 1);
 
-    return step * d + minDepth;
-}
-
-__host__ __device__
-inline float d2DepthInv(int d, int dsize, float minDepth, float maxDepth)
-{
-    float invDepthMin = 1 / maxDepth;
-    float invDepthMax = 1 / minDepth;
-    float step = (invDepthMax - invDepthMin) / (dsize - 1);
-
-    return 1 / (step * d + invDepthMin);
+        return 1 / (step * d + invDepthMin);
+    }
+    else
+    {
+        float step = (maxDepth - minDepth) / (dsize - 1);
+        return step * d + minDepth;
+    }
 }
 
 __global__ void KernIdx2Depth(Image<float> dOut, const Image<float> dIn, int dsize, float minDepth, float maxDepth, bool invDepth)
@@ -738,14 +738,7 @@ __global__ void KernIdx2Depth(Image<float> dOut, const Image<float> dIn, int dsi
 
     if (dOut.InBounds(x, y))
     {
-        if (invDepth)
-        {
-            dOut(x, y) = d2DepthInv(dIn(x, y), dsize, minDepth, maxDepth);
-        }
-        else
-        {
-            dOut(x, y) = d2Depth(dIn(x, y), dsize, minDepth, maxDepth);
-        }
+        dOut(x, y) = d2Depth(dIn(x, y), dsize, minDepth, maxDepth, invDepth);
     }
 }
 
@@ -771,15 +764,7 @@ __global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
     const int d = blockIdx.z * blockDim.z + threadIdx.z;
 
     float3 Pv;
-    if (invDepth)
-    {
-        Pv.z = d2DepthInv(d, dvol.d, minDepth, maxDepth);
-    }
-    else
-    {
-        Pv.z = d2Depth(d, dvol.d, minDepth, maxDepth);
-    }
-
+    Pv.z = d2Depth(d, dvol.d, minDepth, maxDepth, invDepth);
     Pv = K.Unproject(u, v, Pv.z);
 
     const float3 KPc = KT_cv * Pv;
@@ -787,8 +772,8 @@ __global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
 
     if (KPc.z > 0 && dimgc.InBounds(pc.x, pc.y, 5))
     {
-        const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
-        // const float score = (dimgv(u,v) - dimgc.template GetBilinear<float>(pc)) / 255.0f;
+        //const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
+        const float score = abs(dimgv(u,v) - dimgc.template GetBilinear<float>(pc));
         CostVolElem elem = dvol(u, v, d);
         elem.sum += score;
         elem.n   += 1;
@@ -859,8 +844,8 @@ void CostVolMinimum(Image<float> disp, Volume<CostVolElem> vol)
 //////////////////////////////////////////////////////
 
 __global__ void KernCostVolumeCrossSection(
-    Image<float> dScore, Image<CostVolElem> dCostVolSlice
-) {
+        Image<float> dScore, Image<CostVolElem> dCostVolSlice
+        ) {
     const int x = blockIdx.x*blockDim.x + threadIdx.x;
     const int d = blockIdx.y*blockDim.y + threadIdx.y;
 
@@ -875,8 +860,8 @@ __global__ void KernCostVolumeCrossSection(
 }
 
 void CostVolumeCrossSection(
-    Image<float> dScore, Volume<CostVolElem> dCostVol, int y
-) {
+        Image<float> dScore, Volume<CostVolElem> dCostVol, int y
+        ) {
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, dScore);
     KernCostVolumeCrossSection<<<gridDim,blockDim>>>(dScore, dCostVol.ImageXZ(y));
@@ -898,8 +883,8 @@ __global__ void KernFilterDispGrad(Image<To> dOut, Image<Ti> dIn, float threshol
 }
 
 void FilterDispGrad(
-    Image<float> dOut, Image<float> dIn, float threshold
-) {
+        Image<float> dOut, Image<float> dIn, float threshold
+        ) {
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, dOut, 16, 16);
     KernFilterDispGrad<float,float><<<gridDim,blockDim>>>(dOut, dIn, threshold);
@@ -913,9 +898,9 @@ void FilterDispGrad(
 
 template<typename Tout, typename Tin>
 __global__ void KernCostVolumeFromStereoTruncatedAbsAndGrad(
-    Volume<Tout> dvol, Image<Tin> dimgl, Image<Tin> dimgr, float sd,
-    float alpha, float r1, float r2
-) {
+        Volume<Tout> dvol, Image<Tin> dimgl, Image<Tin> dimgr, float sd,
+        float alpha, float r1, float r2
+        ) {
     const int u = blockIdx.x*blockDim.x + threadIdx.x;
     const int v = blockIdx.y*blockDim.y + threadIdx.y;
     const int d = blockIdx.z*blockDim.z + threadIdx.z;
