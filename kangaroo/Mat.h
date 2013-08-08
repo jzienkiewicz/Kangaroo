@@ -10,12 +10,12 @@
 #include "kangaroo/config.h"
 
 #ifndef __CUDACC__
-#ifdef HAVE_EIGEN
-#define USE_EIGEN
-#endif // HAVE_EIGEN
-#ifdef HAVE_TOON
-#define USE_TOON
-#endif // HAVE_TOON
+    #ifdef HAVE_EIGEN
+    #define USE_EIGEN
+    #endif // HAVE_EIGEN
+    #ifdef HAVE_TOON
+    #define USE_TOON
+    #endif // HAVE_TOON
 #endif // __CUDACC__
 
 #ifdef USE_EIGEN
@@ -66,13 +66,13 @@ struct Mat
     }
 
     inline __device__ __host__ void operator+=(const Mat<P,R,C>& rhs) {
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<R*C; ++i )
             m[i] += rhs.m[i];
     }
 
     inline __device__ __host__ void Fill(P val) {
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<R*C; ++i )
             m[i] = val;
     }
@@ -92,7 +92,7 @@ struct Mat
     inline __device__ __host__ Mat<P,NR,1> Head() {
         // TODO: static assert NR <= R;
         Mat<P,NR,1> ret;
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<R; ++i )
             ret[i] = m[i];
         return ret;
@@ -104,7 +104,7 @@ struct Mat
         Mat<P,NR,NC> ret;
 
         for( size_t r=0; r<NR; ++r )
-#pragma unroll
+            #pragma unroll
             for( size_t c=0; c<NC; ++c )
                 ret[r*NC + c] = m[(rs+r)*NC + cs+c];
         return ret;
@@ -227,7 +227,7 @@ template<typename P, unsigned R1, unsigned C1, unsigned R2, unsigned C2>
 inline __device__ __host__ P dot(const Mat<P,R1,C1>& lhs, const Mat<P,R2,C2>& rhs)
 {
     P ret = lhs(0) * rhs(0);
-#pragma unroll
+    #pragma unroll
     for( size_t i=1; i<R1*C1; ++i)
         ret += lhs(i) * rhs(i);
     return ret;
@@ -241,7 +241,7 @@ inline __device__ __host__ Mat<P,R,C> mul_aTb(const Mat<P,CR,R>& a, const Mat<P,
     for( size_t r=0; r<R; ++r) {
         for( size_t c=0; c<C; ++c) {
             ret(r,c) = 0;
-#pragma unroll
+            #pragma unroll
             for( size_t k=0; k<CR; ++k)  {
                 ret(r,c) += a(k,r) * b(k,c);
             }
@@ -361,7 +361,7 @@ struct SymMat
     }
 
     inline __device__ __host__ void SetZero() {
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<unique; ++i )
             m[i] = 0;
     }
@@ -403,14 +403,14 @@ struct SymMat
 
     inline __device__ __host__ void operator+=(const SymMat<P,N>& rhs)
     {
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<unique; ++i )
             m[i] += rhs.m[i];
     }
 
     inline __device__ __host__ void operator*=(const P w)
     {
-#pragma unroll
+        #pragma unroll
         for( size_t i=0; i<unique; ++i )
             m[i] *= w;
     }
@@ -481,37 +481,36 @@ inline __device__ __host__ SymMat<P,N> SymMat_zero()
 template<typename P, unsigned N>
 struct LeastSquaresSystem
 {
-    Mat<P,N,1> JTy;
-    SymMat<P,N> JTJ;
-    P sqErr;
-    unsigned obs;
+  Mat<P,N,1> JTy;
+  SymMat<P,N> JTJ;
+  P sqErr;
+  unsigned obs;
 
-    inline __device__ __host__ void SetZero()
-    {
-        JTJ.SetZero();
-        JTy.SetZero();
-        sqErr = 0;
-        obs = 0;
-    }
+  inline __device__ __host__ void SetZero() {
+      JTJ.SetZero();
+      JTy.SetZero();
+      sqErr = 0;
+      obs = 0;
+  }
 
-    inline __device__ __host__ void operator+=(const LeastSquaresSystem<P,N>& rhs)
-    {
-        JTy += rhs.JTy;
-        JTJ += rhs.JTJ;
-        sqErr += rhs.sqErr;
-        obs += rhs.obs;
-    }
+  inline __device__ __host__ void operator+=(const LeastSquaresSystem<P,N>& rhs)
+  {
+    JTy += rhs.JTy;
+    JTJ += rhs.JTJ;
+    sqErr += rhs.sqErr;
+    obs += rhs.obs;
+  }
 
-    inline __device__ __host__ P mse()
-    {
-        return sqErr/obs;
-    }
+  inline __device__ __host__ P mse()
+  {
+    return sqErr/obs;
+  }
 };
 
 template<typename P, unsigned N>
 inline __device__ __host__ LeastSquaresSystem<P,N> operator+(const LeastSquaresSystem<P,N>& lhs, const LeastSquaresSystem<P,N>& rhs)
 {
-    return (LeastSquaresSystem<P,N>){lhs.JTy+rhs.JTy, lhs.JTJ+rhs.JTJ, lhs.sqErr + rhs.sqErr, lhs.obs + rhs.obs };
+  return (LeastSquaresSystem<P,N>){lhs.JTy+rhs.JTy, lhs.JTJ+rhs.JTJ, lhs.sqErr + rhs.sqErr, lhs.obs + rhs.obs };
 }
 
 ///////////////////////////////////////////
