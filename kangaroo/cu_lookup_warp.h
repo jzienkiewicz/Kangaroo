@@ -2,9 +2,14 @@
 
 #include "Mat.h"
 #include "Image.h"
+#include "ImageIntrinsics.h"
 
 namespace roo
 {
+
+void CreateMatlabLookupTable(Image<float2> lookup,
+    ImageIntrinsics K, float k1, float k2
+);
 
 void CreateMatlabLookupTable(Image<float2> lookup,
     float fu, float fv, float u0, float v0, float k1, float k2
