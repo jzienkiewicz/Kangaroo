@@ -27,23 +27,24 @@ __host__ __device__ inline roo::Mat<float, 3, 3> SE2gen(unsigned int genIdx)
     return gen;
 }
 
-template<typename TO>
+template<typename TO, typename TI>
 __global__ void KernWarp(roo::Image<TO> dOutput,
-                         roo::Image<TO> dInput,
+                         roo::Image<TI> dInput,
                          roo::Mat<float, 3, 3> H)
 {
     const int x = blockIdx.x * blockDim.x + threadIdx.x;
     const int y = blockIdx.y * blockDim.y + threadIdx.y;
 
     float3 po_h = make_float3(x, y, 1);
-    float3 pi_h = roo::mulSO3(H, po_h);
+    float3 pi_h = mulSO3(H, po_h);
 
-    float2 po = roo::dn(po_h);
-    float2 pi = roo::dn(pi_h);
+    float2 po = dn(po_h);
+    float2 pi = dn(pi_h);
 
     if (dInput.InBounds(pi) && dOutput.InBounds(po))
     {
-        dOutput(po.x, po.y) = dInput.template GetBilinear<TO>(pi);
+        TI pix = dInput.template GetBilinear<TI>(pi);
+        dOutput(po.x, po.y) = ConvertPixel<TO,TI>(pix);
     }
     else
     {
@@ -51,22 +52,22 @@ __global__ void KernWarp(roo::Image<TO> dOutput,
     }
 }
 
-template<typename TO>
+template<typename TO, typename TI>
 void ImageWarp(roo::Image<TO> d_ouput,
-               roo::Image<TO> d_input,
+               roo::Image<TI> d_input,
                roo::Mat<float, 3, 3> H)
 {
     dim3 block;
     dim3 grid;
     roo::InitDimFromOutputImageOver(block, grid, d_ouput, 16, 16);
 
-    KernWarp<TO> <<< grid, block>>>(d_ouput, d_input, H);
+    KernWarp<TO,TI> <<< grid, block>>>(d_ouput, d_input, H);
     GpuCheckErrors();
 }
 
-template<typename TO>
+template<typename TO, typename TI>
 __global__ void KernWarp(roo::Image<TO> dOutput,
-                         roo::Image<TO> dInput,
+                         roo::Image<TI> dInput,
                          roo::Image<float> dDepth,
                          roo::Mat<float, 3, 4> T,
                          roo::ImageIntrinsics K)
@@ -82,7 +83,8 @@ __global__ void KernWarp(roo::Image<TO> dOutput,
 
     if (dInput.InBounds(pi) && dOutput.InBounds(po))
     {
-        dOutput(po.x, po.y) = dInput.template GetBilinear<TO>(pi);
+        TI pix = dInput.template GetBilinear<TI>(pi);
+        dOutput(po.x, po.y) = ConvertPixel<TO,TI>(pix);
     }
     else
     {
@@ -90,9 +92,9 @@ __global__ void KernWarp(roo::Image<TO> dOutput,
     }
 }
 
-template<typename TO>
+template<typename TO, typename TI>
 void ImageWarp(roo::Image<TO> d_ouput,
-               roo::Image<TO> d_input,
+               roo::Image<TI> d_input,
                roo::Image<float> d_depth,
                roo::Mat<float, 3, 4> T,
                roo::ImageIntrinsics K)
@@ -101,7 +103,7 @@ void ImageWarp(roo::Image<TO> d_ouput,
     dim3 grid;
     roo::InitDimFromOutputImageOver(block, grid, d_ouput, 16, 16);
 
-    KernWarp<TO> <<< grid, block>>>(d_ouput, d_input, d_depth, T, K);
+    KernWarp<TO,TI> <<< grid, block>>>(d_ouput, d_input, d_depth, T, K);
     GpuCheckErrors();
 }
 
@@ -178,9 +180,11 @@ roo::LeastSquaresSystem<float, 3> LucasKanade(roo::Image<TO> d_reference, roo::I
 // templates instantations
 // uchars are not supported as there is no function lerp for them;
 // lerp is a basic linear interpolation function required for GetBilinear;
-template void ImageWarp<float>( roo::Image<float>  d_ouput, roo::Image<float>  d_input, roo::Mat<float, 3, 3> H);
-template void ImageWarp<float4>(roo::Image<float4> d_ouput, roo::Image<float4> d_input, roo::Mat<float, 3, 3> H);
-template void ImageWarp<float>( roo::Image<float>  d_ouput, roo::Image<float>  d_input, roo::Image<float> d_depth, roo::Mat<float, 3, 4> T, roo::ImageIntrinsics K);
+template void ImageWarp<float4,float4>(roo::Image<float4> d_ouput, roo::Image<float4> d_input, roo::Mat<float, 3, 3> H);
+template void ImageWarp<float,float>(roo::Image<float> d_ouput, roo::Image<float> d_input, roo::Mat<float, 3, 3> H);
+template void ImageWarp<float,float>(roo::Image<float> d_ouput, roo::Image<float> d_input, roo::Image<float> d_depth, roo::Mat<float, 3, 4> T, roo::ImageIntrinsics K);
+template void ImageWarp<float,unsigned char>(roo::Image<float> d_ouput, roo::Image<unsigned char> d_input, roo::Image<float> d_depth, roo::Mat<float, 3, 4> T, roo::ImageIntrinsics K);
+template void ImageWarp<float,unsigned char>(roo::Image<float> d_ouput, roo::Image<unsigned char> d_input, roo::Mat<float, 3, 3> H);
 
 template roo::LeastSquaresSystem<float, 3> LucasKanade<float>(roo::Image<float> d_reference, roo::Image<float> d_template, roo::Image<unsigned char> d_workspace, roo::Mat<float, 3, 3> H);
 template roo::LeastSquaresSystem<float, 3> LucasKanade<float4>(roo::Image<float4> d_reference, roo::Image<float4> d_template, roo::Image<unsigned char> d_workspace, roo::Mat<float, 3, 3> H);
