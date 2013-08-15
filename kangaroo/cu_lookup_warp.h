@@ -25,4 +25,8 @@ void Warp(
     Image<unsigned char> out, const Image<unsigned char> in, const Image<float2> lookup
 );
 
+void Warp(
+    Image<float> out, const Image<float> in, const Image<float2> lookup
+);
+
 }

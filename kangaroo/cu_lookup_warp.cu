@@ -94,6 +94,16 @@ void CreateMatlabLookupTable(
 //////////////////////////////////////////////////////
 
 __global__ void KernWarp(
+    Image<float> out, const Image<float> in, const Image<float2> lookup
+) {
+    const uint x = blockIdx.x*blockDim.x + threadIdx.x;
+    const uint y = blockIdx.y*blockDim.y + threadIdx.y;
+
+    const float2 lu = lookup(x,y);
+    out(x,y) = in.GetBilinear<float>(lu.x, lu.y);
+}
+
+__global__ void KernWarp(
     Image<unsigned char> out, const Image<unsigned char> in, const Image<float2> lookup
 ) {
     const uint x = blockIdx.x*blockDim.x + threadIdx.x;
@@ -112,7 +122,19 @@ void Warp(
     dim3 blockDim, gridDim;
     InitDimFromOutputImage(blockDim,gridDim, out);
     KernWarp<<<gridDim,blockDim>>>(out, in, lookup);
+    GpuCheckErrors();
+}
 
+void Warp(
+    Image<float> out, const Image<float> in, const Image<float2> lookup
+) {
+    assert(out.w <= lookup.w && out.h <= lookup.h);
+    assert(out.w <= in.w && out.h <= in.w);
+
+    dim3 blockDim, gridDim;
+    InitDimFromOutputImage(blockDim,gridDim, out);
+    KernWarp <<<gridDim,blockDim>>>(out, in, lookup);
+    GpuCheckErrors();
 }
 
 }
