@@ -253,7 +253,18 @@ T ImageMax(Image<T> img)
     thrust::device_ptr<T> begin(img.ptr);
     thrust::device_ptr<T> end(img.ptr + img.w*img.h);
 
-    return thrust::reduce(begin, end, (T) -1, thrust::maximum<T>());
+    T initValue;
+    // we dont have c++11 std::numeric_limits<T>::lowest()
+    if (std::numeric_limits<T>::is_signed)
+    {
+        initValue = -std::numeric_limits<T>::max();
+    }
+    else
+    {
+        initValue =  std::numeric_limits<T>::min();
+    }
+
+    return thrust::reduce(begin, end, initValue, thrust::maximum<T>());
 }
 
 template<typename T>
@@ -262,9 +273,7 @@ T ImageMin(Image<T> img)
     thrust::device_ptr<T> begin(img.ptr);
     thrust::device_ptr<T> end(img.ptr + img.w*img.h);
 
-    T img_max = ImageMax(img);
-
-    return thrust::reduce(begin, end, (T) img_max, thrust::minimum<T>());
+    return thrust::reduce(begin, end, std::numeric_limits<T>::max(), thrust::minimum<T>());
 }
 
 //////////////////////////////////////////////////////
