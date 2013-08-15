@@ -11,7 +11,7 @@ namespace roo
 {
 
 const int MinDisparity = 0;
-const int DefaultRad = 2;
+const int DefaultRad = 1;
 //typedef SSNDPatchScore<float,DefaultRad,ImgAccessRaw> DefaultSafeScoreType;
 typedef SANDPatchScore<float,DefaultRad,ImgAccessRaw> DefaultSafeScoreType;
 //typedef SinglePixelSqPatchScore<float,ImgAccessRaw> DefaultSafeScoreType;
@@ -713,7 +713,7 @@ __global__ void KernAddToCostVolume(
 }
 
 __host__ __device__
-inline float d2Depth(int d, int dsize, float minDepth, float maxDepth, bool invDepth)
+float d2Depth(int d, int dsize, float minDepth, float maxDepth, bool invDepth)
 {
     if (invDepth)
     {
@@ -769,10 +769,10 @@ __global__ void KernAddToCostVolume(Volume<CostVolElem> dvol,
     const float3 KPc = KT_cv * Pv;
     const float2 pc  = dn(KPc);
 
-    if (KPc.z > 0 && dimgc.InBounds(pc.x, pc.y, 5))
+    if (dimgc.InBounds(pc.x, pc.y, 5))
     {
-        //const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
-        const float score = abs(dimgv(u,v) - dimgc.template GetBilinear<float>(pc));
+        const float score =  Score::Score(dimgv, u, v, dimgc, pc.x, pc.y) / (float)(Score::area);
+        //const float score = abs(dimgv(u,v) - dimgc.template GetBilinear<float>(pc));
         CostVolElem elem = dvol(u, v, d);
         elem.sum += score;
         elem.n   += 1;
@@ -803,6 +803,22 @@ void CostVolumeAdd(Volume<CostVolElem> dvol,
     dim3 gridDim(dvol.w / blockDim.x, dvol.h / blockDim.y, dvol.d / blockDim.z);
     KernAddToCostVolume<unsigned char, SANDPatchScore<float, DefaultRad, ImgAccessBilinearClamped<float> > ><<<gridDim, blockDim>>>(dvol, dimgv, dimgc, KT_cv, K, minDepth, maxDepth, invDepth);
 }
+
+// FIXME: should use templates
+void CostVolumeAdd(Volume<CostVolElem> dvol,
+                   const Image<float> dimgv,
+                   const Image<float> dimgc,
+                   Mat<float, 3, 4> KT_cv,
+                   const ImageIntrinsics K,
+                   float minDepth,
+                   float maxDepth,
+                   bool invDepth)
+{
+    dim3 blockDim(8, 8, 8);
+    dim3 gridDim(dvol.w / blockDim.x, dvol.h / blockDim.y, dvol.d / blockDim.z);
+    KernAddToCostVolume<float, SANDPatchScore<float, DefaultRad, ImgAccessBilinearClamped<float> > ><<<gridDim, blockDim>>>(dvol, dimgv, dimgc, KT_cv, K, minDepth, maxDepth, invDepth);
+}
+
 
 
 //////////////////////////////////////////////////////

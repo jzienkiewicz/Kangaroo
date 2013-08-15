@@ -74,7 +74,19 @@ void CostVolumeAdd(Volume<CostVolElem> dvol,
                    float maxDist,
                    bool invDepth = true);
 
+void CostVolumeAdd(Volume<CostVolElem> dvol,
+                   const Image<float> dimgv,
+                   const Image<float> dimgc,
+                   Mat<float, 3, 4> KT_cv,
+                   const ImageIntrinsics K,
+                   float minDepth,
+                   float maxDepth,
+                   bool invDepth);
+
 void Idx2Depth(Image<float> dOut, const Image<float> dIn, int dsize, float minDepth, float maxDepth, bool invDepth = true);
+
+__host__ __device__
+float d2Depth(int d, int dsize, float minDepth, float maxDepth, bool invDepth);
 
 void CostVolMinimum(Image<float> disp, Volume<CostVolElem> vol);
 
