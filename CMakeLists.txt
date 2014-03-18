@@ -3,7 +3,7 @@ project( Kangaroo )
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules/")
 
-option(BUILD_APPLICATIONS "Build Applications" ON)
+option(BUILD_APPLICATIONS "Build Applications" OFF)
 option(BUILD_SHARED_LIBS "Build Shared Library" ON)
 
 # Overide with cmake -DCMAKE_BUILD_TYPE=Debug {dir}
