@@ -22,6 +22,10 @@
 #include <Eigen/Dense>
 #endif // USE_EIGEN
 
+#ifdef USE_TOON
+#include <TooN/TooN.h>
+#endif
+
 namespace roo
 {
 
