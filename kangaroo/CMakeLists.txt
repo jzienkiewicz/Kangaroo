@@ -57,7 +57,12 @@ set(HAVE_NPP 1)
 set(CUDA_PROPAGATE_HOST_FLAGS off)
 
 # Generate code for 2.0 and 3.0 CUDA compute architectures (TODO: Verify this works)
-set(CUDA_NVCC_FLAGS "-use_fast_math -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20" )
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -use_fast_math -gencode arch=compute_30,code=sm_30 -gencode arch=compute_20,code=sm_20" )
+
+if(APPLE)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libstdc++")
+    set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -ccbin /opt/local/bin/gcc-mp-4.6")
+endif()
 
 # Make sure that NPP is found
 if(NOT CUDA_npp_LIBRARY)
@@ -76,6 +81,12 @@ if(EIGEN3_FOUND)
     list( APPEND USER_INC ${EIGEN3_INCLUDE_DIR} )
 endif()
 
+find_package(TooN)
+if(TooN_FOUND)
+    set(HAVE_TOON 1)
+    include_directories(${TooN_INCLUDE_DIR})
+endif()
+
 find_package( ASSIMP QUIET )
 if(ASSIMP_FOUND)
     set(HAVE_ASSIMP 1)
@@ -84,11 +95,12 @@ if(ASSIMP_FOUND)
     list(APPEND SRC_CU MarchingCubes.cpp )
 endif()
 
-find_package( OpenCV2 QUIET )
-if(OpenCV2_FOUND)
+set(CMAKE_PREFIX_PATH ${CMAKE_PREFIX_PATH} "/opt/local/lib/cmake/")
+find_package( OpenCV REQUIRED )
+if(OpenCV_FOUND)
     set(HAVE_OPENCV 1)
-    list(APPEND USER_INC ${OpenCV2_INCLUDE_DIRS} )
-    list(APPEND LINK_LIBS ${OpenCV2_LIBRARIES} )
+    list(APPEND USER_INC ${OpenCV_LIB_DIR} )
+    list(APPEND LINK_LIBS ${OpenCV_LIBS} )
 endif()
 
 # So that we can find config.h
